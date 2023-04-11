@@ -20,7 +20,7 @@ def load_data(data_dir):
     X = np.array(X)
     return X, y
 
-data_dir = '/home/salahuddin/projects/nn_practice/datasets/catsanddogs/train/mix'
+data_dir = '/home/salahuddin/projects/datasets/catsanddogs/train/mix'
 X, y = load_data(data_dir)
 # np.squeeze(X)
 print(X.shape, y.shape)
