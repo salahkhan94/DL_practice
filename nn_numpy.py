@@ -85,7 +85,7 @@ class NeuralNetwork:
         self.target = self.target[idx]
 
     # Define the forward pass function
-    def forward_pass(self, X, W1, b1, W2, b2):
+    def forward_pass(self, X, W1, b1, W2, b2, W3, b3):
         # Compute the activation of the hidden layer
         z1 = np.dot(X, W1) + b1
         a1 = self.sigmoid(z1)
@@ -94,24 +94,33 @@ class NeuralNetwork:
         z2 = np.dot(a1, W2) + b2
         a2 = self.sigmoid(z2)
 
+        z3 = np.dot(a2, W3) + b3
+        a3 = self.sigmoid(z3)
+
         # Return the activations of the hidden and output layers
-        return a1, a2
+        return a1, a2, a3
     
         # Define the backward pass function
-    def backward_pass(self, X, y, a1, a2, W1, b1, W2, b2, learning_rate):
+    def backward_pass(self, X, y, a1, a2, a3, W1, b1, W2, b2, W3, learning_rate):
         # Compute the error in the output layer
-        delta2 = (a2 - y) * self.sigmoid_prime(a2)
+        delta3 = (a3 - y) * self.sigmoid_prime(a3)
 
         # Compute the error in the hidden layer
+        delta2 = np.dot(delta3, W3.T) * self.sigmoid_prime(a2)
+
         delta1 = np.dot(delta2, W2.T) * self.sigmoid_prime(a1)
 
         # Compute the gradients of the weights and biases
+        dW3 = np.dot(a2.T, delta3)
+        db3 = np.sum(delta3, axis=0, keepdims=True)
         dW2 = np.dot(a1.T, delta2)
         db2 = np.sum(delta2, axis=0, keepdims=True)
         dW1 = np.dot(X.T, delta1)
         db1 = np.sum(delta1, axis=0, keepdims=True)
 
         # Update the weights and biases
+        W3 -= learning_rate * dW3
+        b3 -= learning_rate * db3
         W2 -= learning_rate * dW2
         b2 -= learning_rate * db2
         W1 -= learning_rate * dW1
@@ -127,18 +136,20 @@ class NeuralNetwork:
         output_size = 1
         W1 = np.random.randn(input_size, hidden_size) * 0.01
         b1 = np.zeros((1, hidden_size))
-        W2 = np.random.randn(hidden_size, output_size) * 0.01
-        b2 = np.zeros((1, output_size))
-        return W1, W2, b2, b1
+        W2 = np.random.randn(input_size, hidden_size) * 0.01
+        b2 = np.zeros((1, hidden_size))
+        W3 = np.random.randn(input_size, output_size) * 0.01
+        b3 = np.zeros((1, output_size))
+        return W1, W2, W3, b3, b2, b1 
 
 # Define the training loop
     def train(self, X_train, y_train, n_epochs, learning_rate):
         # Train the model fo1r the specified number of epochs
-        W1, W2, b2, b1 = self.init(X_train, y_train)
+        W1, W2, W3, b3, b2, b1 = self.init(X_train, y_train)
         bs = 0
         for i in range(n_epochs):
             # Perform a forward pass on the training data
-            a1, a2 = self.forward_pass(X, W1, b1, W2, b2)
+            a1, a2, a3 = self.forward_pass(X, W1, b1, W2, b2, W3, b3)
             if (not bs):
                 self.a1_ = a1
                 self.a2_ = a2
@@ -151,7 +162,7 @@ class NeuralNetwork:
                 print('Epoch', i, 'loss:', loss)
 
             # Perform a backward pass to update the weights and biases
-            W1, b1, W2, b2 = self.backward_pass(X_train, y_train, a1, a2, W1, b1, W2, b2, learning_rate)
+            W1, b1, W2, b2 = self.backward_pass(self, X, y, a1, a2, a3, W1, b1, W2, b2, W3, learning_rate)
 
         # Return the trained weights and biases
         return W1, b1, W2, b2
