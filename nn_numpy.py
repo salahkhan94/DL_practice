@@ -22,7 +22,7 @@ def load_data(data_dir):
 
 data_dir = '/home/salahuddin/projects/datasets/catsanddogs/train/mix'
 X, y = load_data(data_dir)
-print(X.shape, y.shape)
+# print(X.shape, y.shape)
 
 class NeuralNetwork:
     def __init__(self, X, y, batch = 64, lr = 1e-3,  epochs = 50):
@@ -93,7 +93,7 @@ class NeuralNetwork:
         # Compute the activation of the output layer
         z2 = np.dot(a1, W2) + b2
         a2 = self.sigmoid(z2)
-
+        # print(a2.shape)
         z3 = np.dot(a2, W3) + b3
         a3 = self.sigmoid(z3)
 
@@ -101,7 +101,7 @@ class NeuralNetwork:
         return a1, a2, a3
     
         # Define the backward pass function
-    def backward_pass(self, X, y, a1, a2, a3, W1, b1, W2, b2, W3, learning_rate):
+    def backward_pass(self, X, y, a1, a2, a3, W1, b1, W2, b2, W3, b3, learning_rate):
         # Compute the error in the output layer
         delta3 = (a3 - y) * self.sigmoid_prime(a3)
 
@@ -136,9 +136,9 @@ class NeuralNetwork:
         output_size = 1
         W1 = np.random.randn(input_size, hidden_size) * 0.01
         b1 = np.zeros((1, hidden_size))
-        W2 = np.random.randn(input_size, hidden_size) * 0.01
+        W2 = np.random.randn(hidden_size, hidden_size) * 0.01
         b2 = np.zeros((1, hidden_size))
-        W3 = np.random.randn(input_size, output_size) * 0.01
+        W3 = np.random.randn(hidden_size, output_size) * 0.01
         b3 = np.zeros((1, output_size))
         return W1, W2, W3, b3, b2, b1 
 
@@ -162,10 +162,10 @@ class NeuralNetwork:
                 print('Epoch', i, 'loss:', loss)
 
             # Perform a backward pass to update the weights and biases
-            W1, b1, W2, b2 = self.backward_pass(self, X, y, a1, a2, a3, W1, b1, W2, b2, W3, learning_rate)
+            W1, b1, W2, b2 = self.backward_pass(X, y, a1, a2, a3, W1, b1, W2, b2, W3, b3, learning_rate)
 
         # Return the trained weights and biases
-        return W1, b1, W2, b2
+        return W1, b1, W2, b2, W3, b3
 
 nn = NeuralNetwork(X, y, 64, lr = 0.001)
 
@@ -174,10 +174,10 @@ def plot_error(a1, a2, y_train) :
     print("initial loss")
     print(loss)
 
-W1, b1, W2, b2 = nn.train(X, y, n_epochs=500, learning_rate=1e-3)
+W1, b1, W2, b2, W3, b3 = nn.train(X, y, n_epochs=500, learning_rate=1e-3)
 plot_error(nn.a1_, nn.a2_, y)
 # Train the model
-a1, a2 = nn.forward_pass(X, W1, b1, W2, b2)
-loss = np.mean((a2 - y) ** 2)
+a1, a2, a3= nn.forward_pass(X, W1, b1, W2, b2, W3, b3)
+loss = np.mean((a3 - y) ** 2)
 print("Loss after traning")
 print(loss)
