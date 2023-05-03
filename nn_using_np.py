@@ -20,13 +20,13 @@ def load_data(data_dir):
                 y.append(1)
             else:
                 y.append(0)
-    X = torch.stack(X)
+    X = torch.stack(X) # Convert individual components of a list into a full tensor
     y = torch.tensor(y)
     y = y.reshape(-1, 1)
     # print('test', X.shape)
-    y1 = torch.tensor(1)
-    y = torch.add(y, y1)
-    # print(y.shape)
+    # y1 = torch.tensor(1)
+    # y = torch.add(y, y1)
+
     return X, y
 
 class Network(Module):
@@ -71,13 +71,11 @@ def train_model(n_epochs):
         COST = 0
         # print(train_loader[0][1].shape)
         for i in range(N_train):
-            X = train_loader[0][i].unsqueeze(0)
+            X = train_loader[0][i].unsqueeze(0) # Add an additional dimension to the tensor denoting the number of image data contained
             y = train_loader[1][i]
+            print(y)
             optimizer.zero_grad()
-            # print(X.shape)
             z = model.forward(X)
-            # print(y.shape)
-            # print(z.shape)
             z = z.view(1, -1)
             
             criterion = nn.CrossEntropyLoss()
@@ -85,7 +83,7 @@ def train_model(n_epochs):
             loss.backward()
             optimizer.step()
             COST += loss.item()
-        print(COST)
+        # print(COST)
         # cost_list.append(COST / N_train)
         # correct = 0
         # N_val = len(val_loader[0])
