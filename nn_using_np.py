@@ -17,16 +17,16 @@ def load_data(data_dir):
             else:
                 y.append(0)
     X = np.array(X)
+    print(X.shape)
     y = np.array(y)
     y = y.reshape(-1, 1)
     return X, y
 
 data_dir_train = '/home/salahuddin/projects/nn_practice/datasets/catsanddogs/train/mix'
-X_train, y_train = load_data(data_dir_train)
-X_test, y_test = load_data('/home/salahuddin/projects/nn_practice/datasets/catsanddogs/test/mix')
+X_train, y_gt = load_data(data_dir_train)
 
 
-print(X_train.shape, y_train.shape)
+print(X_train.shape, y_gt.shape)
 
 class NeuralNetwork:
     def __init__(self, X, y, batch = 64, lr = 1e-3,  epochs = 50):
@@ -151,9 +151,9 @@ class NeuralNetwork:
         acc = np.count_nonzero(np.argmax(self.a3,axis=1) == np.argmax(self.y,axis=1)) / self.x.shape[0]
         print("Accuracy:", 100 * acc, "%")
     
-NN = NeuralNetwork(X_train, y_train)
+NN = NeuralNetwork(X_train, y_gt)
  
-NN.train()
-NN.plot()
-NN.test(X_test,y_test)
-NN.test(X_train,y_train)
+# NN.train()
+# NN.plot()
+# NN.test(X_test,y_test)
+# NN.test(X_train,y_train)
