@@ -135,7 +135,6 @@ class CatAndDogConvNet(nn.Module):
         X = F.relu(self.fc1(X))
         X = F.relu(self.fc2(X))
         X = self.fc3(X)
-        print(X.shape)
 
         return X
 # Create instance of the model
@@ -157,11 +156,6 @@ for epoch in range(epoches):
     for X, y in train_dl:
 
         preds = model(X)
-        print('preds')
-        print(preds.shape)
-        print('y')
-        print(y.shape)
-        print("\n\n")
         loss = loss_fn(preds, y)
 
         optimizer.zero_grad()
