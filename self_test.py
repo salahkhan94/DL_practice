@@ -11,15 +11,15 @@ import torchvision.datasets as datasets
 from torchvision import datasets, transforms
 from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
-
+import sys
 from sklearn.model_selection import train_test_split
 
 from PIL import Image
 import matplotlib.pyplot as plt
 
-img_files = os.listdir('data/train/')
+img_files = os.listdir('/home/salahuddin/projects/Deeplearning_Practice/mix/')
 img_files = list(filter(lambda x: x != 'train', img_files))
-def train_path(p): return f"data/train/{p}"
+def train_path(p): return f"/home/salahuddin/projects/Deeplearning_Practice/mix//{p}"
 img_files = list(map(train_path, img_files))
 
 print("total training images", len(img_files))
@@ -102,41 +102,8 @@ test_ds = CatDogDataset(test, transform)
 test_dl = DataLoader(test_ds, batch_size=100)
 print(len(test_ds), len(test_dl))
 
-class CatAndDogConvNet(nn.Module):
-
-    def __init__(self):
-        super().__init__()
-
-        # onvolutional layers (3,16,32)
-        self.conv1 = nn.Conv2d(in_channels = 3, out_channels = 16, kernel_size=(5, 5), stride=2, padding=1)
-        self.conv2 = nn.Conv2d(in_channels = 16, out_channels = 32, kernel_size=(5, 5), stride=2, padding=1)
-        self.conv3 = nn.Conv2d(in_channels = 32, out_channels = 64, kernel_size=(3, 3), padding=1)
-
-        # conected layers
-        self.fc1 = nn.Linear(in_features= 64 * 6 * 6, out_features=500)
-        self.fc2 = nn.Linear(in_features=500, out_features=50)
-        self.fc3 = nn.Linear(in_features=50, out_features=2)
-
-
-    def forward(self, X):
-
-        X = F.relu(self.conv1(X))
-        X = F.max_pool2d(X, 2)
-
-        X = F.relu(self.conv2(X))
-        X = F.max_pool2d(X, 2)
-
-        X = F.relu(self.conv3(X))
-        X = F.max_pool2d(X, 2)
-
-        X = X.view(X.shape[0], -1)
-        X = F.relu(self.fc1(X))
-        X = F.relu(self.fc2(X))
-        X = self.fc3(X)
-
-        return X
     
-# Pytorch Convolutional Neural Network Model Architecture
+# Pytorch Convolutional Neur0al Network Model Architecture
 class CatAndDogConvNet(nn.Module):
 
     def __init__(self):
@@ -168,6 +135,7 @@ class CatAndDogConvNet(nn.Module):
         X = F.relu(self.fc1(X))
         X = F.relu(self.fc2(X))
         X = self.fc3(X)
+        print(X.shape)
 
         return X
 # Create instance of the model
@@ -175,7 +143,7 @@ model = CatAndDogConvNet()
 
 losses = []
 accuracies = []
-epoches = 8
+epoches = 50
 start = time.time()
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr = 0.001)
@@ -189,6 +157,11 @@ for epoch in range(epoches):
     for X, y in train_dl:
 
         preds = model(X)
+        print('preds')
+        print(preds.shape)
+        print('y')
+        print(y.shape)
+        print("\n\n")
         loss = loss_fn(preds, y)
 
         optimizer.zero_grad()
@@ -206,7 +179,7 @@ for epoch in range(epoches):
     losses.append(epoch_loss)
 
     print("\n --- Epoch: {}, train loss: {:.4f}, train acc: {:.4f}, time: {}".format(epoch, epoch_loss, epoch_accuracy, time.time() - start))
-
+    epsilon = sys.float_info.epsilon
     # test set accuracy
     with torch.no_grad():
 
@@ -222,7 +195,52 @@ for epoch in range(epoches):
             test_accuracy = ((test_preds.argmax(dim=1) == test_y).float().mean())
             test_epoch_accuracy += test_accuracy
 
-        test_epoch_accuracy = test_epoch_accuracy/len(test_dl)
-        test_epoch_loss = test_epoch_loss / len(test_dl)
+        test_epoch_accuracy = test_epoch_accuracy/(len(test_dl) + epsilon)
+        test_epoch_loss = test_epoch_loss / (len(test_dl) + epsilon)
 
         print("Epoch: {}, test loss: {:.4f}, test acc: {:.4f}, time: {}\n".format(epoch, test_epoch_loss, test_epoch_accuracy, time.time() - start))
+
+
+test_files = os.listdir('/home/salahuddin/projects/Deeplearning_Practice/dogs/')
+test_files = list(filter(lambda x: x != 'test', test_files))
+def test_path(p): return f"/home/salahuddin/projects/Deeplearning_Practice/dogs/{p}"
+test_files = list(map(test_path, test_files))
+
+class TestCatDogDataset(Dataset):
+    def __init__(self, image_paths, transform):
+        super().__init__()
+        self.paths = image_paths
+        self.len = len(self.paths)
+        self.transform = transform
+
+    def __len__(self): return self.len
+
+    def __getitem__(self, index): 
+        path = self.paths[index]
+        image = Image.open(path).convert('RGB')
+        image = self.transform(image)
+        fileid = path.split('/')[-1].split('.')[0]
+        return (image, fileid)
+
+test_ds = TestCatDogDataset(test_files, transform)
+test_dl = DataLoader(test_ds, batch_size=100)
+len(test_ds), len(test_dl)
+
+
+dog_probs = []
+
+with torch.no_grad():
+    for X, fileid in test_dl:
+        preds = model(X)
+        preds_list = F.softmax(preds, dim=1)[:, 1].tolist()
+        dog_probs += list(zip(list(fileid), preds_list))
+
+
+for img, probs in zip(test_files[:5], dog_probs[:5]):
+    pil_im = Image.open(img, 'r')
+    label = "dog" if probs[1] > 0.5 else "cat"
+    title = "prob of dog: " + str(probs[1]) + " Classified as: " + label
+    plt.figure()
+    plt.imshow(pil_im)
+    plt.suptitle(title)
+    plt.show()
