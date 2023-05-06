@@ -59,12 +59,12 @@ class Network(Module):
 
 model = Network()
 learning_rate = 0.1
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 criterion = torch.nn.CrossEntropyLoss()
 
 train_loader = load_data(data_dir=data_dir)
 N_train = len(train_loader[0])
-n_epochs = 3
+n_epochs = 1
 
 def train_model(n_epochs):
     for epoch in range(n_epochs):
@@ -83,7 +83,8 @@ def train_model(n_epochs):
             loss.backward()
             optimizer.step()
             COST += loss.item()
-        # print(COST)
+            print(" ", loss.item())
+        print(COST)
         # cost_list.append(COST / N_train)
         # correct = 0
         # N_val = len(val_loader[0])
