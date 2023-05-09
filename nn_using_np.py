@@ -1,5 +1,5 @@
 from torch.nn import Module, Conv2d, Linear, AdaptiveAvgPool2d
-from torch.nn.functional import relu
+from torch.nn.functional import relu, sigmoid
 import numpy as np
 import cv2
 import os
@@ -55,12 +55,20 @@ class Network(Module):
         x = self.fc2(x)
         x = relu(x)
         x = self.out(x)
+        x = relu(x)
         return x
 
 model = Network()
-learning_rate = 0.1
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-criterion = torch.nn.CrossEntropyLoss()
+# for param in model.parameters():
+#     torch.nn.init.uniform_(param, -1, 1)
+
+# for name, param in model.named_parameters():
+#     print(name, param.data)
+
+# model.load_state_dict(torch.load("models/test_model.pt"))
+learning_rate = 0.01
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+criterion = torch.nn.MSELoss()
 
 train_loader = load_data(data_dir=data_dir)
 N_train = len(train_loader[0])
@@ -74,16 +82,19 @@ def train_model(n_epochs):
             X = train_loader[0][i].unsqueeze(0) # Add an additional dimension to the tensor denoting the number of image data contained
             y = train_loader[1][i]
             print(y)
-            optimizer.zero_grad()
             z = model.forward(X)
+            # print(z.shape)
             z = z.view(1, -1)
-            
+            # print(z.shape)
+            optimizer.zero_grad()
             criterion = nn.CrossEntropyLoss()
             loss = criterion(z, y)
-            loss.backward()
+            loss.backward() 
+            
             optimizer.step()
             COST += loss.item()
             print(" ", loss.item())
+            print("")
         print(COST)
         # cost_list.append(COST / N_train)
         # correct = 0
@@ -91,3 +102,11 @@ def train_model(n_epochs):
         # # perform a prediction on the validation data
         # with
 train_model(n_epochs)
+
+# def test_model():
+
+# torch.save(model.state_dict(), "/home/salahuddin/projects/Deeplearning_Practice/test_model.pt")
+# mix_data_dir = '/home/salahuddin/projects/Deeplearning_Practice/test_mix'
+# test_loader = load_data(data_dir=mix_data_dir)
+
+# def testmodel :
