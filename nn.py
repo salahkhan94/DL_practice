@@ -1,0 +1,135 @@
+import numpy as np
+import pandas as pd
+import os
+import random
+import time
+
+import torch
+import torchvision
+import torch.nn as nn
+import torchvision.datasets as datasets
+from torchvision import datasets, transforms
+from torch.utils.data import Dataset, DataLoader
+import torch.nn.functional as F
+import sys
+from sklearn.model_selection import train_test_split
+
+from PIL import Image
+import matplotlib.pyplot as plt
+
+img_files = os.listdir('/home/salahuddin/projects/Deeplearning_Practice/mix/')
+img_files = list(filter(lambda x: x != 'train', img_files))
+def train_path(p): return f"/home/salahuddin/projects/Deeplearning_Practice/mix//{p}"
+img_files = list(map(train_path, img_files))
+
+# print("total training images", len(img_files))
+# print("First item", img_files[0])
+
+random.shuffle(img_files)
+
+train = img_files[:20000]
+test = img_files[20000:]
+
+# print("train size", len(train))
+# print("test size", len(test))
+
+# image normalization
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))
+])
+
+# preprocessing of images
+class CatDogDataset(Dataset):
+    def __init__(self, image_paths, transform):
+        super().__init__()
+        self.paths = image_paths
+        self.len = len(self.paths)
+        self.transform = transform
+
+    def __len__(self): return self.len
+
+    def __getitem__(self, index): 
+        path = self.paths[index]
+        image = Image.open(path).convert('RGB')
+        image = self.transform(image)
+        label = 0 if 'cat' in path else 1
+        return (image, label)
+
+# create train dataset
+train_ds = CatDogDataset(train, transform)
+train_dl = DataLoader(train_ds, batch_size=100)
+print(len(train_ds), len(train_dl))
+
+# Pytorch Convolutional Neur0al Network Model Architecture
+class CatAndDogConvNet(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+
+        # onvolutional layers (3,16,32)
+        self.conv1 = nn.Conv2d(in_channels = 3, out_channels = 16, kernel_size=(5, 5), stride=2, padding=1)
+        self.conv2 = nn.Conv2d(in_channels = 16, out_channels = 32, kernel_size=(5, 5), stride=2, padding=1)
+        self.conv3 = nn.Conv2d(in_channels = 32, out_channels = 64, kernel_size=(3, 3), padding=1)
+
+        # conected layers
+        self.fc1 = nn.Linear(in_features= 64 * 6 * 6, out_features=500)
+        self.fc2 = nn.Linear(in_features=500, out_features=50)
+        self.fc3 = nn.Linear(in_features=50, out_features=2)
+
+
+    def forward(self, X):
+
+        X = F.relu(self.conv1(X))
+        X = F.max_pool2d(X, 2)
+
+        X = F.relu(self.conv2(X))
+        X = F.max_pool2d(X, 2)
+
+        X = F.relu(self.conv3(X))
+        X = F.max_pool2d(X, 2)
+
+        X = X.view(X.shape[0], -1)
+        X = F.relu(self.fc1(X))
+        X = F.relu(self.fc2(X))
+        X = self.fc3(X)
+
+        return X
+
+model = CatAndDogConvNet()
+
+losses = []
+accuracies = []
+epoches = 50
+start = time.time()
+loss_fn = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr = 0.01)
+
+for epoch in range(epoches):
+
+    epoch_loss = 0
+    epoch_accuracy = 0
+
+    for X, y in train_dl:
+
+        preds = model(X)
+        loss = loss_fn(preds, y)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        accuracy = ((preds.argmax(dim=1) == y).float().mean())
+        epoch_accuracy += accuracy
+        epoch_loss += loss
+        print(loss.item())
+        print('.', end='', flush=True)
+
+    epoch_accuracy = epoch_accuracy/len(train_dl)
+    accuracies.append(epoch_accuracy)
+    epoch_loss = epoch_loss / len(train_dl)
+    losses.append(epoch_loss)
+
+    print("\n --- Epoch: {}, train loss: {:.4f}, train acc: {:.4f}, time: {}".format(epoch, epoch_loss, epoch_accuracy, time.time() - start))
+    epsilon = sys.float_info.epsilon
