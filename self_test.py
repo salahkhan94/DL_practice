@@ -35,7 +35,7 @@ print("test size", len(test))
 
 # image normalization
 transform = transforms.Compose([
-    transforms.Resize((224, 224)),
+    transforms.Resize((64, 64)),
     transforms.ToTensor(),
     transforms.Normalize((0.5,), (0.5,))
 ])
@@ -69,7 +69,7 @@ print(len(test_ds), len(test_dl))
 
 # image normalization
 transform = transforms.Compose([
-    transforms.Resize((224, 224)),
+    transforms.Resize((64, 64)),
     transforms.ToTensor(),
     transforms.Normalize((0.5,), (0.5,))
 ])
@@ -115,26 +115,35 @@ class CatAndDogConvNet(nn.Module):
         self.conv3 = nn.Conv2d(in_channels = 32, out_channels = 64, kernel_size=(3, 3), padding=1)
 
         # conected layers
-        self.fc1 = nn.Linear(in_features= 64 * 6 * 6, out_features=500)
-        self.fc2 = nn.Linear(in_features=500, out_features=50)
-        self.fc3 = nn.Linear(in_features=50, out_features=2)
+        self.fc1 = nn.Linear(in_features= 64, out_features=64)
+        self.fc2 = nn.Linear(in_features=64, out_features=32)
+        self.fc3 = nn.Linear(in_features=32, out_features=2)
 
 
     def forward(self, X):
 
         X = F.relu(self.conv1(X))
         X = F.max_pool2d(X, 2)
-
+        # print(X.shape)    
+        # print("h1")
         X = F.relu(self.conv2(X))
         X = F.max_pool2d(X, 2)
-
+        # print("h2")
+        # print(X.shape)
         X = F.relu(self.conv3(X))
         X = F.max_pool2d(X, 2)
-
+        # print("h3")
+        # print(X.shape)
         X = X.view(X.shape[0], -1)
         X = F.relu(self.fc1(X))
+        # print(X.shape)                                              
+        # print("h5")
         X = F.relu(self.fc2(X))
+        # print(X.shape)
+        # print("h6")
         X = self.fc3(X)
+        # print(X.shape)
+        # print("h7")
 
         return X
 # Create instance of the model
@@ -166,7 +175,7 @@ for epoch in range(epoches):
         epoch_accuracy += accuracy
         epoch_loss += loss
         print('.', end='', flush=True)
-
+        print(loss.item())  
     epoch_accuracy = epoch_accuracy/len(train_dl)
     accuracies.append(epoch_accuracy)
     epoch_loss = epoch_loss / len(train_dl)
