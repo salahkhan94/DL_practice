@@ -5,7 +5,7 @@ import cv2
 import os
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 data_dir = '/home/salahuddin/projects/Deeplearning_Practice/mix/'
 
 def load_data(data_dir):
@@ -31,44 +31,56 @@ def load_data(data_dir):
 
 class Network(Module):
     def __init__(self):
-        super(Network, self).__init__()
-        self.conv1 = Conv2d(in_channels=3, out_channels=64, kernel_size=5)
-        self.conv2 = Conv2d(in_channels=64, out_channels=64, kernel_size=5, stride=1, padding=4) 
-        self.conv3 = Conv2d(in_channels=64, out_channels=256, kernel_size=5) 
-        self.avgPooling = AdaptiveAvgPool2d(output_size=(256, 256))
-        self.fc1 = Linear(in_features=256, out_features=128)
-        self.fc2 = Linear(in_features=128, out_features=64)
-        self.out = Linear(in_features=64, out_features=2)
+        super().__init__()
 
-    def forward(self, x):
-        x = self.conv1(x)
-        x = self.avgPooling(x)
-        x = self.conv2(x)
-        x = relu(x)
-        x = self.avgPooling(x)
-        x = self.conv3(x)
-        x = relu(x)
+        # onvolutional layers (3,16,32)
+        self.conv1 = nn.Conv2d(in_channels = 3, out_channels = 16, kernel_size=(5, 5), stride=2, padding=1)
+        self.conv2 = nn.Conv2d(in_channels = 16, out_channels = 32, kernel_size=(5, 5), stride=2, padding=1)
+        self.conv3 = nn.Conv2d(in_channels = 32, out_channels = 64, kernel_size=(3, 3), padding=1)
 
-        x = self.avgPooling(x)    
-        x = self.fc1(x)
-        x = relu(x)
-        x = self.fc2(x)
-        x = relu(x)
-        x = self.out(x)
-        x = relu(x)
-        return x
+        # conected layers
+        self.fc1 = nn.Linear(in_features= 64, out_features=64)
+        self.fc2 = nn.Linear(in_features=64, out_features=32)
+        self.fc3 = nn.Linear(in_features=32, out_features=2)
 
+
+    def forward(self, X):
+
+        X = F.relu(self.conv1(X))
+        X = F.max_pool2d(X, 2)
+        # print(X.shape)    
+        # print("h1")
+        X = F.relu(self.conv2(X))
+        X = F.max_pool2d(X, 2)
+        # print("h2")
+        # print(X.shape)
+        X = F.relu(self.conv3(X))
+        X = F.max_pool2d(X, 2)
+        # print("h3")
+        # print(X.shape)
+        X = X.view(X.shape[0], -1)
+        X = F.relu(self.fc1(X))
+        # print(X.shape)                                              
+        # print("h5")
+        X = F.relu(self.fc2(X))
+        # print(X.shape)
+        # print("h6")
+        X = self.fc3(X)
+        # print(X.shape)
+        # print("h7")
+
+        return X
 model = Network()
-# for param in model.parameters():
-#     torch.nn.init.uniform_(param, -1, 1)
+for param in model.parameters():
+    torch.nn.init.uniform_(param, -1, 1)
 
 # for name, param in model.named_parameters():
 #     print(name, param.data)
 
 # model.load_state_dict(torch.load("models/test_model.pt"))
 learning_rate = 0.01
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
-criterion = torch.nn.MSELoss()
+optimizer = torch.optim.RMSprop(model.parameters(), lr=learning_rate)
+criterion = torch.nn.CrossEntropyLoss()
 
 train_loader = load_data(data_dir=data_dir)
 N_train = len(train_loader[0])
@@ -85,9 +97,9 @@ def train_model(n_epochs):
             z = model.forward(X)
             # print(z.shape)
             z = z.view(1, -1)
-            # print(z.shape)
             optimizer.zero_grad()
             criterion = nn.CrossEntropyLoss()
+            print(z.shape, y.shape)
             loss = criterion(z, y)
             loss.backward() 
             
