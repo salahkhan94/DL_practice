@@ -165,6 +165,7 @@ for epoch in range(epoches):
     for X, y in train_dl:
 
         preds = model(X)
+        print(preds.shape, y.shape)
         loss = loss_fn(preds, y)
 
         optimizer.zero_grad()
