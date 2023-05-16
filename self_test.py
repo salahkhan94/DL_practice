@@ -124,26 +124,14 @@ class CatAndDogConvNet(nn.Module):
 
         X = F.relu(self.conv1(X))
         X = F.max_pool2d(X, 2)
-        # print(X.shape)    
-        # print("h1")
         X = F.relu(self.conv2(X))
         X = F.max_pool2d(X, 2)
-        # print("h2")
-        # print(X.shape)
         X = F.relu(self.conv3(X))
         X = F.max_pool2d(X, 2)
-        # print("h3")
-        # print(X.shape)
         X = X.view(X.shape[0], -1)
         X = F.relu(self.fc1(X))
-        # print(X.shape)                                              
-        # print("h5")
         X = F.relu(self.fc2(X))
-        # print(X.shape)
-        # print("h6")
         X = self.fc3(X)
-        # print(X.shape)
-        # print("h7")
 
         return X
 # Create instance of the model
