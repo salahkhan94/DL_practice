@@ -84,6 +84,7 @@ class CatDogDataset(Dataset):
 
     def __len__(self): return self.len
 
+
     def __getitem__(self, index): 
         path = self.paths[index]
         image = Image.open(path).convert('RGB')
@@ -149,13 +150,16 @@ for epoch in range(epoches):
 
     epoch_loss = 0
     epoch_accuracy = 0
-
+    COST = 0
     for X, y in train_dl:
 
         preds = model(X)
-        print(preds.shape, y.shape)
+        # print(preds.shape, y.shape)
+        # print("")
+        # print(preds.shape)
+        # print("")
         loss = loss_fn(preds, y)
-
+        # print(preds.shape, y.shape)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -163,14 +167,16 @@ for epoch in range(epoches):
         accuracy = ((preds.argmax(dim=1) == y).float().mean())
         epoch_accuracy += accuracy
         epoch_loss += loss
-        print('.', end='', flush=True)
-        print(loss.item())  
+        COST += loss.item()
+        # print('.', end='', flush=True)
+        # print(loss.item())  
+    print(epoch, COST)  
     epoch_accuracy = epoch_accuracy/len(train_dl)
     accuracies.append(epoch_accuracy)
     epoch_loss = epoch_loss / len(train_dl)
     losses.append(epoch_loss)
 
-    print("\n --- Epoch: {}, train loss: {:.4f}, train acc: {:.4f}, time: {}".format(epoch, epoch_loss, epoch_accuracy, time.time() - start))
+    # print("\n --- Epoch: {}, train loss: {:.4f}, train acc: {:.4f}, time: {}".format(epoch, epoch_loss, epoch_accuracy, time.time() - start))
     epsilon = sys.float_info.epsilon
     # test set accuracy
     with torch.no_grad():
@@ -193,9 +199,9 @@ for epoch in range(epoches):
         print("Epoch: {}, test loss: {:.4f}, test acc: {:.4f}, time: {}\n".format(epoch, test_epoch_loss, test_epoch_accuracy, time.time() - start))
 
 
-test_files = os.listdir('/home/salahuddin/projects/Deeplearning_Practice/dogs/')
+test_files = os.listdir('/home/salahuddin/projects/Deeplearning_Practice/test/')
 test_files = list(filter(lambda x: x != 'test', test_files))
-def test_path(p): return f"/home/salahuddin/projects/Deeplearning_Practice/dogs/{p}"
+def test_path(p): return f"/home/salahuddin/projects/Deeplearning_Practice/test/{p}"
 test_files = list(map(test_path, test_files))
 
 class TestCatDogDataset(Dataset):
@@ -211,7 +217,9 @@ class TestCatDogDataset(Dataset):
         path = self.paths[index]
         image = Image.open(path).convert('RGB')
         image = self.transform(image)
+        print(path)
         fileid = path.split('/')[-1].split('.')[0]
+        print(fileid)
         return (image, fileid)
 
 test_ds = TestCatDogDataset(test_files, transform)
@@ -224,7 +232,7 @@ dog_probs = []
 with torch.no_grad():
     for X, fileid in test_dl:
         preds = model(X)
-        preds_list = F.softmax(preds, dim=1)[:, 1].tolist()
+        preds_list = F.softmax(preds, dim=1)[:, 1].tolist()   
         dog_probs += list(zip(list(fileid), preds_list))
 
 
